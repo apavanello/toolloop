@@ -200,7 +200,7 @@ repo) and assert on `result.history` — no LLM, no flakes.
 - License: MIT
 - Python: 3.11+
 - Dependencies: pydantic (only)
-- Roadmap: streaming, parallel tool calls, a small CLI (`init`, `test`), ...
+- Roadmap: [roadmap.md](roadmap.md) — streaming, parallel tool calls, a small CLI (`init`, `test`), ...
 
 ## How it works
 
