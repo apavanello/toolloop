@@ -61,6 +61,14 @@ work with any `complete(messages) -> str` implementation.
   `ContextManager`; heuristic default stays; tiktoken left to the user
   (model-dependent).
 
+### v0.3.1 — developer logging (2026-08)
+
+- **stdlib logging in the loop**: steps, tool calls (name/args/status/duration)
+  and run outcomes at INFO, parse errors as WARNING, raw envelopes at DEBUG —
+  on the `toolloop` logger.
+- **`toolloop.devlog`**: `dev_logger()` (stderr) / `dev_logger("run.log")`
+  (file), idempotent one-liner for dev runs.
+
 ## Next up
 
 ### v0.4 — candidates

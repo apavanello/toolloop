@@ -29,7 +29,7 @@ from .subagent import subagent_tool
 from .testing import ScriptedProvider, final_answer, tool_call
 from .tools import STD_TOOLS, ToolDefinition, tool
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 __all__ = [
     "Agent",

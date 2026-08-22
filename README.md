@@ -234,13 +234,14 @@ and are rebuilt on resume:
 
 ```python
 state = agent.to_state()
-open("session.json", "w").write(state.to_json())   # persist wherever you like
+open("session.json", "w").write(state.to_json())  # persist wherever you like
 
 # later:
 from toolloop import AgentState
+
 state = AgentState.from_json(open("session.json").read())
 agent = Agent.from_state(state, provider, tools=[...])
-await agent.run("now, the next step")   # continues the same conversation
+await agent.run("now, the next step")  # continues the same conversation
 ```
 
 ### Observability
@@ -249,6 +250,24 @@ With `opentelemetry` installed (`pip install "toolloop[otel]"`), the loop is
 auto-instrumented — spans for `run` → `step` → `tool`, with parse errors as
 events. Without the SDK, instrumentation is a no-op and the core carries no
 extra dependency. Inject a custom tracer with `Agent(..., tracer=tracer)`.
+
+### Developer logging
+
+The loop logs through the standard `logging` module on the `toolloop` logger.
+One line sends it to the terminal or a file — the quickest way to watch an
+agent work during development:
+
+```python
+from toolloop.devlog import dev_logger
+
+dev_logger()  # -> stderr, live
+dev_logger("run.log")  # -> file
+```
+
+INFO covers each step, tool calls (name, args, status, duration, result
+preview) and run outcomes; parse errors arrive as warnings; raw envelopes are
+DEBUG. Since it is stdlib logging, it composes with any handlers and formatters
+you already use.
 
 ### Subagents
 

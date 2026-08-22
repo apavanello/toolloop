@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -37,6 +38,8 @@ from .protocol.base import FinalAnswer, ToolCallRequest, ToolProtocol
 from .protocol.json_protocol import JsonToolProtocol
 from .state import AgentState
 from .tools.definition import ToolDefinition
+
+logger = logging.getLogger("toolloop")
 
 
 class OnMax(StrEnum):
@@ -126,13 +129,17 @@ class Agent:
         new input continues the existing conversation instead of starting one.
         """
         with otel_span(self._tracer, "toolloop.run"):
-            return await self._run(
+            result = await self._run(
                 input,
                 max_iterations=max_iterations,
                 on_max=on_max,
                 control=control,
                 output_model=output_model,
             )
+            logger.info(
+                "run finished: status=%s, steps=%d", result.status.value, len(result.history)
+            )
+            return result
 
     async def _run(
         self,
@@ -175,12 +182,14 @@ class Agent:
                 ) as step_span:
                     raw = await self._generate(messages)
                     messages.append(Message(Role.ASSISTANT, raw))
+                    logger.debug("step %d raw response: %s", step, raw)
 
                     try:
                         parsed = self.protocol.parse(raw)
                     except ParseError as exc:
                         parse_failures += 1
                         history.append(StepRecord(step=step, raw=raw, kind="parse_error"))
+                        logger.warning("step %d: parse error: %s", step, exc.reason)
                         if step_span is not None:
                             step_span.set_attribute("toolloop.step.kind", "parse_error")
                             step_span.add_event(
@@ -208,6 +217,7 @@ class Agent:
                     if isinstance(parsed, FinalAnswer):
                         if step_span is not None:
                             step_span.set_attribute("toolloop.step.kind", "final_answer")
+                        logger.info("step %d: final_answer: %s", step, _preview(parsed.output))
                         if output_model is not None:
                             value, error = _validate_output(parsed.output, output_model)
                             if error is not None:
@@ -232,6 +242,16 @@ class Agent:
                     if step_span is not None:
                         step_span.set_attribute("toolloop.step.kind", "tool_calls")
                     call_records, observations = await self._process_calls(step, parsed.calls, mode)
+                    for record in call_records:
+                        logger.info(
+                            "step %d: %s %s -> %s (%.2fs): %s",
+                            step,
+                            record.name,
+                            record.args,
+                            record.status,
+                            record.duration,
+                            _preview(record.result),
+                        )
                     messages.append(Message(Role.USER, "\n".join(observations), kind="observation"))
                     history.append(
                         StepRecord(step=step, raw=raw, kind="tool_calls", calls=call_records)
@@ -477,7 +497,14 @@ class Agent:
             return RunResult(Status.MAX_ITERATIONS, None, history)
         if on_max is OnMax.PARTIAL:
             return RunResult(Status.MAX_ITERATIONS, None, history)
+        logger.warning("run exhausted max_iterations (%d)", max_iterations)
         raise MaxIterationsExceeded(max_iterations, history[-1].raw if history else None)
+
+
+def _preview(value: Any, limit: int = 160) -> str:
+    text = value if isinstance(value, str) else json.dumps(value, default=str)
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
 def _validate_output(output: Any, model: type[BaseModel]) -> tuple[BaseModel | None, str | None]:
