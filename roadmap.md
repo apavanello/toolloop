@@ -69,11 +69,23 @@ work with any `complete(messages) -> str` implementation.
 - **`toolloop.devlog`**: `dev_logger()` (stderr) / `dev_logger("run.log")`
   (file), idempotent one-liner for dev runs.
 
+### v0.4.0 — MCP bridge + sync facade (2026-08)
+
+- **`toolloop.mcp`**: expose MCP servers as toolloop tools. `mcp_tools()`
+  context manager opens stdio or streamable-HTTP transports (official SDK
+  helpers), discovers tools and yields `ToolDefinition`s; multiple servers
+  with optional name prefixes. Arguments are pass-through — the server's
+  `inputSchema` is rendered verbatim into the system prompt and validation
+  stays server-side (`ToolDefinition.schema` override added to the core).
+  Extra: `toolloop[mcp]`.
+- **`toolloop.sync`**: `run_sync(agent, input)` — thin facade for sync code.
+- Integration-tested against a real FastMCP server over stdio (subprocess),
+  plus fake-session unit tests.
+
 ## Next up
 
-### v0.4 — candidates
+### v0.5 — candidates
 
-- **MCP bridge**: expose Model Context Protocol servers as toolloop tools.
 - **Sub-agent orchestration**: typed handoffs, shared registries, teams.
 - **Evals as assets**: curated scenario suites (pytest + `toolloop.testing`)
   tracked as repeatable evaluations.

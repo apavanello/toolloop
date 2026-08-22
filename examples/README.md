@@ -11,6 +11,7 @@ and applications come last.
 | 03 | [`03_control_and_hooks.py`](03_control_and_hooks.py) | `APPROVE` vs `BYPASS`, deny/rewrite calls, observability |
 | 04 | [`04_subagent.py`](04_subagent.py) | delegation with an isolated context |
 | 05 | [`05_context_window.py`](05_context_window.py) | truncation + compaction of old observations |
+| 06 | [`06_mcp_tools.py`](06_mcp_tools.py) | MCP servers as tools (spawns its own server — offline) |
 
 Run any of them from the repository root:
 

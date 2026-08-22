@@ -49,6 +49,7 @@ pip install toolloop                    # once published
 pip install "toolloop[openai]"          # + OpenAICompat/OpenRouter adapters
 pip install "toolloop[anthropic]"       # + Anthropic adapter
 pip install "toolloop[otel]"            # + OpenTelemetry auto-instrumentation
+pip install "toolloop[mcp]"             # + MCP (Model Context Protocol) bridge
 # or, from source:
 uv sync --extra dev
 ```
@@ -290,6 +291,36 @@ from toolloop import STD_TOOLS
 
 Pure-Python coding-agent toolset; import it or ignore it — the core knows
 nothing about it.
+
+### MCP tools (Model Context Protocol)
+
+Expose any MCP server's tools to your agent — the whole MCP ecosystem for
+free. Arguments pass through untouched (the server validates them per its own
+`inputSchema`, rendered verbatim into the system prompt):
+
+```python
+from toolloop.mcp import McpServerConfig, mcp_tools
+
+config = McpServerConfig(command="uvx", args=["mcp-server-fetch"])
+# or:  McpServerConfig(url="https://example.com/mcp", headers={...})
+
+async with mcp_tools(config) as tools:  # also accepts a list of configs
+    agent = Agent(provider, tools=tools)  # tools are alive only inside the with
+    await agent.run("fetch the toolloop README")
+```
+
+Requires `pip install "toolloop[mcp]"`. A fully offline example (it spawns
+its own MCP server) lives in [`examples/06_mcp_tools.py`](examples/06_mcp_tools.py).
+
+### Sync usage
+
+Scripts without an event loop can use `run_sync`:
+
+```python
+from toolloop import run_sync
+
+result = run_sync(agent, "how much is 2 + 3?")
+```
 
 ## Testing your agents
 

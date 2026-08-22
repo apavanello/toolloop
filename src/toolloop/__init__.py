@@ -26,10 +26,11 @@ from .protocol import (
 from .provider import Provider
 from .state import AgentState
 from .subagent import subagent_tool
+from .sync import run_sync
 from .testing import ScriptedProvider, final_answer, tool_call
 from .tools import STD_TOOLS, ToolDefinition, tool
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 __all__ = [
     "Agent",
@@ -63,6 +64,7 @@ __all__ = [
     "console_approver",
     "estimate_tokens",
     "final_answer",
+    "run_sync",
     "subagent_tool",
     "tool",
     "tool_call",
