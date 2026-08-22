@@ -6,9 +6,11 @@ import asyncio
 import inspect
 import json
 import logging
+import random
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 from time import perf_counter
 from typing import Any
 
@@ -57,6 +59,7 @@ class RunResult:
     status: Status
     output: Any = None
     history: list[StepRecord] = field(default_factory=list)
+    usage: dict[str, Any] | None = None  # summed provider-reported usage, if any
 
 
 class Agent:
@@ -86,6 +89,11 @@ class Agent:
         max_tool_result_chars: int = 10_000,
         token_counter: Callable[[Sequence[Message]], int] | None = None,
         tracer: Any = None,
+        max_retries: int = 0,
+        retry_backoff: float = 0.5,
+        provider_timeout: float | None = None,
+        checkpoint: Callable[[AgentState], Any] | str | Path | None = None,
+        checkpoint_every: int = 10,
     ) -> None:
         self.provider = provider
         self.protocol = protocol or JsonToolProtocol()
@@ -110,9 +118,17 @@ class Agent:
             else None
         )
         self._tracer = resolve_tracer(tracer)
+        if max_retries < 0:
+            raise ValueError("max_retries must be >= 0")
+        self.max_retries = max_retries
+        self.retry_backoff = retry_backoff
+        self.provider_timeout = provider_timeout
+        self.checkpoint = checkpoint
+        self.checkpoint_every = checkpoint_every
         # live conversation of the current session (empty until the first run)
         self.conversation: list[Message] = []
         self._session_history: list[StepRecord] = []
+        self._run_usage: dict[str, Any] | None = None
 
     async def run(
         self,
@@ -154,6 +170,7 @@ class Agent:
         messages: list[Message] = list(self.conversation)
         history: list[StepRecord] = list(self._session_history)
         parse_failures = 0
+        self._run_usage = None
         try:
             if mode is ControlMode.APPROVE and self.on_tool_call is None:
                 raise ControlError(
@@ -234,10 +251,12 @@ class Agent:
                                 continue
                             history.append(StepRecord(step=step, raw=raw, kind="final_answer"))
                             await self._fire_step(step, messages, raw, "final_answer", [])
-                            return RunResult(Status.COMPLETED, value, history)
+                            await self._maybe_checkpoint(messages, history, force=True)
+                            return self._finalize(Status.COMPLETED, value, history)
                         history.append(StepRecord(step=step, raw=raw, kind="final_answer"))
                         await self._fire_step(step, messages, raw, "final_answer", [])
-                        return RunResult(Status.COMPLETED, parsed.output, history)
+                        await self._maybe_checkpoint(messages, history, force=True)
+                        return self._finalize(Status.COMPLETED, parsed.output, history)
 
                     if step_span is not None:
                         step_span.set_attribute("toolloop.step.kind", "tool_calls")
@@ -259,6 +278,7 @@ class Agent:
                     if self.context is not None:
                         messages = await self.context.manage(messages)
                     await self._fire_step(step, messages, raw, "tool_calls", call_records)
+                    await self._maybe_checkpoint(messages, history)
 
             return await self._handle_max(on_max, max_iterations, messages, history, output_model)
         finally:
@@ -287,8 +307,67 @@ class Agent:
         agent._session_history = list(state.history)
         return agent
 
+    def _finalize(self, status: Status, output: Any, history: list[StepRecord]) -> RunResult:
+        return RunResult(status, output, history, usage=self._run_usage)
+
+    async def _maybe_checkpoint(
+        self,
+        messages: list[Message],
+        history: list[StepRecord],
+        force: bool = False,
+    ) -> None:
+        """Persist a checkpoint of the live session; failures never kill the run."""
+        if self.checkpoint is None:
+            return
+        if not force and (len(history) % self.checkpoint_every) != 0:
+            return
+        state = AgentState(messages=list(messages), history=list(history))
+        try:
+            if callable(self.checkpoint):
+                outcome = self.checkpoint(state)
+                if inspect.isawaitable(outcome):
+                    await outcome
+            else:
+                path = Path(str(self.checkpoint))
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(state.to_json())
+        except Exception:
+            logger.exception("checkpoint failed (ignored)")
+        else:
+            logger.debug("checkpoint written")
+
     async def _generate(self, messages: list[Message]) -> str:
-        """Call the provider; prefer streaming when both sides support it.
+        """Call the provider with an optional timeout and retry/backoff.
+
+        Transport failures (network blips, 5xx, hangs) are retried with
+        exponential backoff and jitter; ``CancelledError`` always propagates —
+        cancellation is never retried. Model behavior (unparseable output) is
+        not retried here: the auto-repair loop owns that.
+        """
+        attempts = self.max_retries + 1
+        for attempt in range(1, attempts + 1):
+            try:
+                if self.provider_timeout is not None:
+                    async with asyncio.timeout(self.provider_timeout):
+                        return await self._generate_once(messages)
+                return await self._generate_once(messages)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                if attempt >= attempts:
+                    raise
+                delay = min(self.retry_backoff * 2 ** (attempt - 1), 30.0)
+                delay += random.uniform(0, delay * 0.25)
+                logger.warning(
+                    "provider attempt %d/%d failed; retrying in %.2fs",
+                    attempt,
+                    attempts,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+
+    async def _generate_once(self, messages: list[Message]) -> str:
+        """One provider attempt; prefers streaming when both sides support it.
 
         Streaming is UX-only: deltas are forwarded to ``on_delta`` and the
         accumulated text is used exactly like a ``complete()`` response.
@@ -301,8 +380,20 @@ class Agent:
                 outcome = self.on_delta(delta)
                 if inspect.isawaitable(outcome):
                     await outcome
-            return "".join(chunks)
-        return await self.provider.complete(messages)
+            text = "".join(chunks)
+        else:
+            text = await self.provider.complete(messages)
+        self._collect_usage()
+        return text
+
+    def _collect_usage(self) -> None:
+        """Sum the provider-reported usage of the last call, when available."""
+        last_usage = getattr(self.provider, "last_usage", None)
+        if not callable(last_usage):
+            return
+        value = last_usage()
+        if isinstance(value, dict):
+            self._run_usage = _merge_usage(self._run_usage, value)
 
     async def _process_calls(
         self, step: int, calls: list[ToolCallRequest], mode: ControlMode
@@ -493,12 +584,25 @@ class Agent:
                     history.append(
                         StepRecord(step=max_iterations + 1, raw=raw, kind="final_answer")
                     )
-                    return RunResult(Status.COMPLETED, value, history)
-            return RunResult(Status.MAX_ITERATIONS, None, history)
+                    await self._maybe_checkpoint(messages, history, force=True)
+                    return self._finalize(Status.COMPLETED, value, history)
+            await self._maybe_checkpoint(messages, history, force=True)
+            return self._finalize(Status.MAX_ITERATIONS, None, history)
         if on_max is OnMax.PARTIAL:
-            return RunResult(Status.MAX_ITERATIONS, None, history)
+            await self._maybe_checkpoint(messages, history, force=True)
+            return self._finalize(Status.MAX_ITERATIONS, None, history)
         logger.warning("run exhausted max_iterations (%d)", max_iterations)
         raise MaxIterationsExceeded(max_iterations, history[-1].raw if history else None)
+
+
+def _merge_usage(total: dict[str, Any] | None, delta: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(total or {})
+    for key, value in delta.items():
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            merged[key] = merged.get(key, 0) + value
+        else:
+            merged[key] = value
+    return merged
 
 
 def _preview(value: Any, limit: int = 160) -> str:
