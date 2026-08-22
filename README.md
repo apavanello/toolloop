@@ -1,29 +1,22 @@
-# toolloop
+[English](README.md) | [Português (BR)](README.pt-br.md)
+
+<p align="center">
+  <img src="./assets/readme/hero.svg" width="100%"
+       alt="toolloop — agent loops for LLM providers without native tool use. Terminal panel showing a real agent run: tool_call envelope, tools executing, observation, final_answer.">
+</p>
 
 [![CI](https://github.com/apavanello/toolloop/actions/workflows/ci.yml/badge.svg)](https://github.com/apavanello/toolloop/actions/workflows/ci.yml)
-
-**Agent loops for LLM providers without native tool use.**
+[![PyPI](https://img.shields.io/pypi/v/toolloop?color=3FB950&label=PyPI)](https://pypi.org/project/toolloop/)
+[![Python](https://img.shields.io/pypi/pyversions/toolloop?color=3FB950)](https://pypi.org/project/toolloop/)
+[![License: MIT](https://img.shields.io/pypi/l/toolloop?color=3FB950)](LICENSE)
 
 `toolloop` is a Python framework for building autonomous agents — tool use,
 exploration, coding — on top of any LLM endpoint, even (especially) the ones
 whose SDKs never exposed a `tools` parameter. If you can send messages and get
 text back, you can run an agent on it.
 
-```
-             ┌─────────────────────────────────────────────┐
-             │                                             │
-  input ──▶  │   system prompt (tool instructions)        │
-             │   + conversation history                    │
-             ▼                                             │
-       ┌───────────┐   {"type":"tool_call", ...}   ┌────────────┐
-       │ provider  │ ────────────────────────────▶ │ tool runs  │
-       │ (yours)   │                               └────────────┘
-       └───────────┘                                       │
-             │                                             │ observation
-             │ {"type":"final_answer", ...}               ▼
-             ▼                                       back to provider
-          output
-```
+> GitHub: <https://github.com/apavanello/toolloop> ·
+> PyPI: <https://pypi.org/project/toolloop/>
 
 ## Why
 
@@ -47,14 +40,14 @@ capable of agentic work — the SDK just won't carry function calls.
 Requires Python 3.11+.
 
 ```bash
-pip install toolloop                    # once published
+pip install toolloop                    # core (pydantic-only)
 pip install "toolloop[openai]"          # + OpenAICompat/OpenRouter adapters
 pip install "toolloop[anthropic]"       # + Anthropic adapter
 pip install "toolloop[otel]"            # + OpenTelemetry auto-instrumentation
 pip install "toolloop[mcp]"             # + MCP (Model Context Protocol) bridge
-# or, from source:
-uv sync --extra dev
 ```
+
+From source: `uv sync --extra dev`.
 
 ## Quickstart (no LLM needed)
 
