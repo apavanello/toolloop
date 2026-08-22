@@ -23,9 +23,10 @@ class ToolDefinition:
     args_model: type[BaseModel]
     func: Callable[..., Awaitable[Any]]
     dangerous: bool = False
+    schema: dict[str, Any] | None = None  # verbatim JSON schema override (e.g. MCP)
 
     def json_schema(self) -> dict[str, Any]:
-        return self.args_model.model_json_schema()
+        return self.schema if self.schema is not None else self.args_model.model_json_schema()
 
     async def execute(self, args: dict[str, Any]) -> tuple[bool, str]:
         """Validate ``args``, run the tool, return ``(ok, observation)``.
@@ -38,6 +39,9 @@ class ToolDefinition:
         except ValidationError as exc:
             return False, _format_validation_error(exc)
         kwargs = {name: getattr(validated, name) for name in type(validated).model_fields}
+        extra = getattr(validated, "__pydantic_extra__", None)
+        if extra:
+            kwargs.update(extra)  # pass-through tools (extra="allow") keep their args
         try:
             result = await self.func(**kwargs)
         except Exception as exc:  # tool errors are observations, not crashes
