@@ -92,10 +92,6 @@ work with any `complete(messages) -> str` implementation.
 - **ReAct protocol variant**: for models that handle free-text formats better
   than JSON (the protocol seam already exists).
 
-## Ideas / exploration
-
-- **Sync facade**: thin `run_sync()` wrapper over the async API.
-
 ## Non-goals
 
 - Provider management or SDK bundling in core.
