@@ -84,9 +84,28 @@ async def part2_agent() -> None:
     print("output:", result.output)
 
 
+def part3_token_counter() -> None:
+    print("\n--- Part 3: pluggable token counter ---")
+
+    def exact_chars(messages):  # any policy you like — even tiktoken
+        return sum(len(m.content) for m in messages)
+
+    manager = ContextManager(
+        ScriptedProvider(),
+        max_tokens=1_000,
+        token_counter=exact_chars,  # default heuristic is ~chars/4
+    )
+    messages = [Message(Role.SYSTEM, "s" * 400), Message(Role.USER, "x" * 500)]
+    # 900 exact chars < 1000 budget -> untouched, even though the ~chars/4
+    # heuristic would also pass; flip the numbers to see management kick in.
+    managed = asyncio.run(manager.manage(messages))
+    print("exact-char budget respected:", managed is messages)
+
+
 def main() -> None:
     part1_context_manager()
     asyncio.run(part2_agent())
+    part3_token_counter()
 
 
 if __name__ == "__main__":

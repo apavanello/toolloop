@@ -10,8 +10,11 @@ and applications come last.
 | 02 | [`02_custom_tools.py`](02_custom_tools.py) | `@tool`, pydantic validation, the auto-repair loop |
 | 03 | [`03_control_and_hooks.py`](03_control_and_hooks.py) | `APPROVE` vs `BYPASS`, deny/rewrite calls, observability |
 | 04 | [`04_subagent.py`](04_subagent.py) | delegation with an isolated context |
-| 05 | [`05_context_window.py`](05_context_window.py) | truncation + compaction of old observations |
+| 05 | [`05_context_window.py`](05_context_window.py) | truncation + compaction, pluggable `token_counter` |
 | 06 | [`06_mcp_tools.py`](06_mcp_tools.py) | MCP servers as tools (spawns its own server — offline) |
+| 07 | [`07_parallel_and_streaming.py`](07_parallel_and_streaming.py) | `max_parallel_calls` wall-clock, `stream()` + `on_delta` |
+| 08 | [`08_sessions_and_checkpoints.py`](08_sessions_and_checkpoints.py) | save/resume a conversation, incremental checkpoints |
+| 09 | [`09_production_hardening.py`](09_production_hardening.py) | retries, timeout, rate limiting, usage, `run_sync` — all sync |
 
 Run any of them from the repository root:
 

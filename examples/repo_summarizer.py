@@ -67,6 +67,8 @@ async def main() -> None:
             "Do not invent facts you did not observe."
         ),
         max_context_tokens=16_000,
+        max_retries=2,  # transient gateway blips: back off and retry
+        provider_timeout=120,  # never hang forever on a stuck request
     )
     result = await agent.run(
         f"Analyze the repository at {target!r} and summarize it.",

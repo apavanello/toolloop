@@ -141,8 +141,8 @@ derruba o loop.
 result = await agent.run(
     "resuma os PRs abertos",
     max_iterations=25,
-    on_max=OnMax.WRAP_UP,       # ou RAISE (padrão) ou PARTIAL
-    output_model=Summary,       # modelo pydantic: saída estruturada validada
+    on_max=OnMax.WRAP_UP,  # ou RAISE (padrão) ou PARTIAL
+    output_model=Summary,  # modelo pydantic: saída estruturada validada
 )
 result.status  # Status.COMPLETED | Status.MAX_ITERATIONS
 result.output  # str, ou uma instância de Summary validada
@@ -176,8 +176,9 @@ seguras em silêncio e pergunta a um humano apenas as marcadas com
 ```python
 from toolloop import console_approver
 
-agent = Agent(provider, tools=STD_TOOLS, control=ControlMode.APPROVE,
-              on_tool_call=console_approver())
+agent = Agent(
+    provider, tools=STD_TOOLS, control=ControlMode.APPROVE, on_tool_call=console_approver()
+)
 ```
 
 Os hooks `on_step` e `on_tool_result` dão observabilidade total (auditoria,
@@ -237,13 +238,14 @@ código e são reconstruídos no resume:
 
 ```python
 state = agent.to_state()
-open("session.json", "w").write(state.to_json())   # persista onde quiser
+open("session.json", "w").write(state.to_json())  # persista onde quiser
 
 # depois:
 from toolloop import AgentState
+
 state = AgentState.from_json(open("session.json").read())
 agent = Agent.from_state(state, provider, tools=[...])
-await agent.run("agora, o próximo passo")   # continua a mesma conversa
+await agent.run("agora, o próximo passo")  # continua a mesma conversa
 ```
 
 ### Observabilidade
@@ -262,8 +264,8 @@ agente trabalhar durante o desenvolvimento:
 ```python
 from toolloop.devlog import dev_logger
 
-dev_logger()             # -> stderr, ao vivo
-dev_logger("run.log")    # -> arquivo
+dev_logger()  # -> stderr, ao vivo
+dev_logger("run.log")  # -> arquivo
 ```
 
 INFO cobre cada passo, chamadas de tools (nome, args, status, duração, preview
@@ -296,8 +298,8 @@ from toolloop.mcp import McpServerConfig, mcp_tools
 config = McpServerConfig(command="uvx", args=["mcp-server-fetch"])
 # ou:  McpServerConfig(url="https://example.com/mcp", headers={...})
 
-async with mcp_tools(config) as tools:      # também aceita uma lista de configs
-    agent = Agent(provider, tools=tools)    # tools vivas apenas dentro do with
+async with mcp_tools(config) as tools:  # também aceita uma lista de configs
+    agent = Agent(provider, tools=tools)  # tools vivas apenas dentro do with
     await agent.run("busque o README do toolloop")
 ```
 
@@ -327,11 +329,11 @@ provider = rate_limited(MeuProvider(), concurrency=5, min_interval=0.2)  # compa
 agent = Agent(
     provider,
     tools=[...],
-    max_retries=3,              # erros transitórios de gateway: backoff exponencial + jitter
+    max_retries=3,  # erros transitórios de gateway: backoff exponencial + jitter
     retry_backoff=0.5,
-    provider_timeout=60,        # provider pendurado falha rápido em vez de travar
+    provider_timeout=60,  # provider pendurado falha rápido em vez de travar
     checkpoint="session.json",  # snapshots incrementais de estado (ou um callable)
-    checkpoint_every=10,        # ...a cada N passos, mais um ao fim de cada run
+    checkpoint_every=10,  # ...a cada N passos, mais um ao fim de cada run
 )
 ```
 
