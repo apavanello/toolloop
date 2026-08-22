@@ -1,5 +1,7 @@
 # toolloop
 
+[![CI](https://github.com/apavanello/toolloop/actions/workflows/ci.yml/badge.svg)](https://github.com/apavanello/toolloop/actions/workflows/ci.yml)
+
 **Agent loops for LLM providers without native tool use.**
 
 `toolloop` is a Python framework for building autonomous agents — tool use,
@@ -321,6 +323,35 @@ from toolloop import run_sync
 
 result = run_sync(agent, "how much is 2 + 3?")
 ```
+
+### Production hardening
+
+The pieces you want before trusting an agent with real work:
+
+```python
+from toolloop import Agent, rate_limited
+
+provider = rate_limited(MyProvider(), concurrency=5, min_interval=0.2)  # shared = global
+
+agent = Agent(
+    provider,
+    tools=[...],
+    max_retries=3,              # transient gateway errors: exponential backoff + jitter
+    retry_backoff=0.5,
+    provider_timeout=60,        # a hanging provider fails fast instead of forever
+    checkpoint="session.json",  # incremental state snapshots (or a callable)
+    checkpoint_every=10,        # ...every N steps, plus one at the end of each run
+)
+```
+
+- **Retries** cover transport failures only; parse errors stay with the
+  auto-repair loop, and `CancelledError` is never retried.
+- **Checkpoints** survive crashes: resume with `Agent.from_state(
+  AgentState.from_json(open("session.json").read()), provider, tools)`.
+- **Usage per run**: providers may expose `last_usage()` (the shipped adapters
+  do); `RunResult.usage` sums it across the run.
+- **Cancellation** is graceful: the conversation is preserved and resumable,
+  and the `bash` tool never leaves subprocesses behind.
 
 ## Testing your agents
 

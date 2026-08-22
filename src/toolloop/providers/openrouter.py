@@ -49,6 +49,7 @@ class OpenRouterProvider:
         # reasoning_details of each assistant turn, keyed by a content prefix
         # so they can be replayed ("passed back unmodified") on later calls.
         self._reasoning_by_prefix: dict[str, Any] = {}
+        self._last_usage: dict[str, Any] | None = None
 
     async def complete(self, messages: Sequence[Message]) -> str:
         response = await self.client.chat.completions.create(
@@ -60,7 +61,13 @@ class OpenRouterProvider:
         details = getattr(message, "reasoning_details", None)
         if details is not None and message.content:
             self._reasoning_by_prefix[message.content[:64]] = details
+        usage = getattr(response, "usage", None)
+        self._last_usage = usage.model_dump() if usage else None
         return message.content or ""
+
+    def last_usage(self) -> dict[str, Any] | None:
+        """Usage of the last response as reported by OpenRouter (tokens, cost...)."""
+        return self._last_usage
 
     def _build_payload(self, messages: Sequence[Message]) -> list[dict[str, Any]]:
         payload: list[dict[str, Any]] = []

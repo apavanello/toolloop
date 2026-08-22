@@ -24,6 +24,11 @@ async def bash(command: str, timeout: float = 60.0, cwd: str | None = None) -> s
         proc.kill()
         await proc.wait()
         raise TimeoutError(f"command timed out after {timeout:.0f}s and was killed") from None
+    except asyncio.CancelledError:
+        # never leave a subprocess behind when the agent is cancelled
+        proc.kill()
+        await proc.wait()
+        raise
     text = out.decode(errors="replace")
     if len(text) > MAX_OUTPUT_CHARS:
         text = text[:MAX_OUTPUT_CHARS] + f"\n...[output truncated, {len(text)} chars total]"

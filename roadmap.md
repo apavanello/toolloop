@@ -82,9 +82,26 @@ work with any `complete(messages) -> str` implementation.
 - Integration-tested against a real FastMCP server over stdio (subprocess),
   plus fake-session unit tests.
 
+### v1.0.0 — production ready (2026-08)
+
+- **Provider resilience**: `max_retries` + `retry_backoff` (exponential with
+  jitter; transport failures only, never cancellation) and
+  `provider_timeout` per call.
+- **Rate limiting**: `toolloop.resilience.rate_limited(provider,
+  concurrency=..., min_interval=...)` — composable wrapper; one instance
+  shared across agents is a process-wide limit.
+- **Incremental checkpoints**: `checkpoint=` (callable or path) fires every
+  `checkpoint_every` steps and at run end; failures never kill the run.
+- **Usage per run**: optional `provider.last_usage()` contract; `RunResult
+  .usage` sums it (shipped adapters report SDK usage).
+- **Graceful cancellation**: conversation preserved and resumable; the `bash`
+  tool kills its subprocess.
+- **Pipeline**: GitHub repo + CI (matrix 3.11–3.13) + release workflow with
+  PyPI trusted publishing (tag `v*` -> tests -> build -> publish).
+
 ## Next up
 
-### v0.5 — candidates
+### v1.1 — candidates
 
 - **Sub-agent orchestration**: typed handoffs, shared registries, teams.
 - **Evals as assets**: curated scenario suites (pytest + `toolloop.testing`)

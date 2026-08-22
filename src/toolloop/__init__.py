@@ -24,13 +24,14 @@ from .protocol import (
     ToolProtocol,
 )
 from .provider import Provider
+from .resilience import rate_limited
 from .state import AgentState
 from .subagent import subagent_tool
 from .sync import run_sync
 from .testing import ScriptedProvider, final_answer, tool_call
 from .tools import STD_TOOLS, ToolDefinition, tool
 
-__version__ = "0.4.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "Agent",
@@ -64,6 +65,7 @@ __all__ = [
     "console_approver",
     "estimate_tokens",
     "final_answer",
+    "rate_limited",
     "run_sync",
     "subagent_tool",
     "tool",

@@ -28,6 +28,7 @@ class OpenAICompatProvider:
         self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
         self.model = model
         self.extra_body = extra_body
+        self._last_usage: dict[str, Any] | None = None
 
     async def complete(self, messages: Sequence[Message]) -> str:
         response = await self.client.chat.completions.create(
@@ -35,4 +36,10 @@ class OpenAICompatProvider:
             messages=[{"role": m.role.value, "content": m.content} for m in messages],
             extra_body=self.extra_body,
         )
+        usage = getattr(response, "usage", None)
+        self._last_usage = usage.model_dump() if usage else None
         return response.choices[0].message.content or ""
+
+    def last_usage(self) -> dict[str, Any] | None:
+        """Usage of the last response as reported by the SDK (tokens, etc.)."""
+        return self._last_usage
