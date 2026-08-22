@@ -1,6 +1,6 @@
 [project]
 name = "toolloop"
-version = "1.0.0"
+version = "1.0.1"
 description = "Agent loop framework for LLM providers without native tool use"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,6 +26,12 @@ openai = ["openai>=1.40"]
 anthropic = ["anthropic>=0.34"]
 otel = ["opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20"]
 mcp = ["mcp>=1.9,<2"]
+all = [
+    "toolloop[openai]",
+    "toolloop[anthropic]",
+    "toolloop[otel]",
+    "toolloop[mcp]",
+]
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.23",

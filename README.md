@@ -1,4 +1,4 @@
-[English](README.md) | [Português (BR)](README.pt-br.md)
+[English](https://github.com/apavanello/toolloop/blob/main/README.md) | [Português (BR)](https://github.com/apavanello/toolloop/blob/main/README.pt-br.md)
 
 <p align="center">
   <img src="./assets/readme/hero.svg" width="100%"
@@ -41,6 +41,7 @@ Requires Python 3.11+.
 
 ```bash
 pip install toolloop                    # core (pydantic-only)
+pip install "toolloop[all]"             # everything below in one go
 pip install "toolloop[openai]"          # + OpenAICompat/OpenRouter adapters
 pip install "toolloop[anthropic]"       # + Anthropic adapter
 pip install "toolloop[otel]"            # + OpenTelemetry auto-instrumentation
