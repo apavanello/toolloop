@@ -1,0 +1,70 @@
+site_name: toolloop
+site_description: Agent loops for LLM providers without native tool use
+site_url: https://apavanello.github.io/toolloop
+repo_url: https://github.com/apavanello/toolloop
+repo_name: apavanello/toolloop
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Concepts:
+      - The agent loop: concepts/loop.md
+      - Tools: concepts/tools.md
+      - Control & hooks: concepts/control.md
+      - Context window: concepts/context.md
+      - Sessions & checkpoints: concepts/sessions.md
+      - Parallel & streaming: concepts/parallel-streaming.md
+  - Production: production.md
+  - MCP: mcp.md
+  - CLI: cli.md
+  - Examples: examples.md
+  - API reference:
+      - Agent: api/agent.md
+      - Tools: api/tools.md
+      - Providers: api/providers.md
+      - MCP: api/mcp.md
+      - Support modules: api/support.md

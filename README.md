@@ -16,7 +16,8 @@ whose SDKs never exposed a `tools` parameter. If you can send messages and get
 text back, you can run an agent on it.
 
 > GitHub: <https://github.com/apavanello/toolloop> ·
-> PyPI: <https://pypi.org/project/toolloop/>
+> PyPI: <https://pypi.org/project/toolloop/> ·
+> Docs: <https://apavanello.github.io/toolloop>
 
 ## Why
 

@@ -29,3 +29,4 @@ uv.lock
 brainstorms/
 .toolloop-session.json
 *.log
+site/

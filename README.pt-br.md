@@ -17,7 +17,8 @@ consegue enviar mensagens e receber texto de volta, você consegue rodar um
 agente nele.
 
 > GitHub: <https://github.com/apavanello/toolloop> ·
-> PyPI: <https://pypi.org/project/toolloop/>
+> PyPI: <https://pypi.org/project/toolloop/> ·
+> Documentação: <https://apavanello.github.io/toolloop>
 
 ## Por quê
 

@@ -1,0 +1,12 @@
+/* toolloop brand — matches the README hero green (#3FB950 family) */
+:root {
+  --md-primary-fg-color: #2ea043;
+  --md-primary-fg-color--light: #3fb950;
+  --md-primary-fg-color--dark: #238636;
+  --md-accent-fg-color: #2ea043;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #3fb950;
+  --md-accent-fg-color: #3fb950;
+}

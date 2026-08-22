@@ -99,6 +99,12 @@ work with any `complete(messages) -> str` implementation.
 - **Pipeline**: GitHub repo + CI (matrix 3.11–3.13) + release workflow with
   PyPI trusted publishing (tag `v*` -> tests -> build -> publish).
 
+### Docs site (post-1.0, 2026-08)
+
+- MkDocs Material site (`docs/`) with guides, production notes and an API
+  reference generated from docstrings (mkdocstrings); deployed to GitHub
+  Pages on every push that touches `docs/`.
+
 ## Next up
 
 ### v1.1 — candidates

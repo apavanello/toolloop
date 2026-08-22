@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="330" viewBox="0 0 1200 330" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">toolloop — agent loops for LLM providers without native tool use</title>
+  <desc id="hero-desc">Wordmark on the left; on the right, a terminal panel showing a real agent run: a tool_call envelope, tools executing, an observation coming back, and a final_answer envelope.</desc>
+
+  <rect width="1200" height="330" rx="26" fill="#0D1117"/>
+
+  <g id="title-block">
+    <text x="64" y="84" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="21" letter-spacing="3" fill="#8B949E">PYTHON AGENT-LOOP FRAMEWORK</text>
+    <text x="60" y="162" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="82" font-weight="700" fill="#E6EDF3">tool<tspan fill="#3FB950">loop</tspan></text>
+    <text x="64" y="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="27" fill="#ADBAC7">Agent loops for LLM providers</text>
+    <text x="64" y="244" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="27" fill="#ADBAC7">without native tool use.</text>
+    <text x="64" y="298" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" fill="#8B949E">Python &#8805; 3.11 &#183; pydantic-only core &#183; MIT &#183; MCP bridge</text>
+  </g>
+
+  <g id="run-trace">
+    <rect x="712" y="52" width="436" height="226" rx="18" fill="#161B22" stroke="#30363D"/>
+    <text x="740" y="84" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" fill="#6E7681">toolloop &#183; dev_logger</text>
+    <line x1="740" y1="98" x2="1120" y2="98" stroke="#30363D"/>
+    <text x="740" y="132" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#8B949E">&#9656; run("summarize the PRs")</text>
+    <text x="740" y="166" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#3FB950">&#9666; {"type": "tool_call", &#8230;}</text>
+    <text x="740" y="200" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#E6EDF3">&#9656; bash()  read_file()  grep()</text>
+    <text x="740" y="234" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#8B949E">&#9666; observation: exit code 0</text>
+    <text x="740" y="262" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#3FB950">&#10003; {"type": "final_answer"}</text>
+  </g>
+</svg>
