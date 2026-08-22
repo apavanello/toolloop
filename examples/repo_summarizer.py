@@ -55,9 +55,7 @@ async def log_progress(ctx) -> None:
 
 async def main() -> None:
     target = sys.argv[1] if len(sys.argv) > 1 else "."
-    provider = OpenRouterProvider(
-        model=os.environ.get("TOOLLOOP_MODEL", "openai/gpt-4o-mini")
-    )
+    provider = OpenRouterProvider(model=os.environ.get("TOOLLOOP_MODEL", "openai/gpt-4o-mini"))
     agent = Agent(
         provider,
         tools=[file_tree, list_files, read_file, grep],

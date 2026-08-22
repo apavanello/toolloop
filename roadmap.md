@@ -27,19 +27,25 @@ work with any `complete(messages) -> str` implementation.
 - 47 deterministic tests (scripted fake provider), reference provider adapters
   in `examples/`.
 
+### v0.2.0 — autonomy, ergonomics, tooling (2026-08)
+
+- **Parallel tool calls**: `max_parallel_calls=N` runs the calls of a turn
+  concurrently (`asyncio.gather` + semaphore). Gating (approvals/vetos) is
+  always sequential; results and observations keep the original call order.
+- **Streaming contract (optional, UX-only)**: providers may implement
+  `stream(messages)` (async iterator of deltas); with an `on_delta` callback
+  the agent streams while parsing the accumulated text exactly like a
+  `complete()` response.
+- **`toolloop.testing`**: `ScriptedProvider` + `tool_call()`/`final_answer()`
+  envelope builders for deterministic scenario tests.
+- **`toolloop.approval`**: `console_approver()` — batteries-included
+  human-in-the-loop gate (safe tools silent, dangerous ones prompted).
+- **CLI**: `toolloop init` (full scaffold on empty folders; metadata-only on
+  existing projects; never overwrites) and `toolloop check` (validates the
+  modules declared in `[tool.toolloop]`: imports, duplicate tool names, schema
+  rendering). Deliberately **no `run`** — it's a library.
+
 ## Next up
-
-### v0.2 — autonomy & ergonomics
-
-- **Parallel tool calls**: execute the `calls` list concurrently
-  (`asyncio.gather`) with a per-agent concurrency policy; the envelope format
-  already carries a list, so no protocol change.
-- **Streaming contract**: optional `Provider` extension for UX (live tokens);
-  the loop itself still consumes complete responses.
-- **CLI basics**: `toolloop init` (scaffold an agent project), `toolloop test`
-  (run scripted-provider scenarios), `toolloop run`.
-- **Built-in CLI approver**: batteries-included human-in-the-loop gate for
-  `ControlMode.APPROVE`.
 
 ### v0.3 — ecosystem & production
 
@@ -55,8 +61,8 @@ work with any `complete(messages) -> str` implementation.
 
 - **MCP bridge**: expose Model Context Protocol servers as toolloop tools.
 - **Sub-agent orchestration**: typed handoffs, shared registries, teams.
-- **Evals as assets**: scenario files (scripted providers) runnable by
-  `toolloop test` as repeatable evaluations.
+- **Evals as assets**: curated scenario suites (pytest + `toolloop.testing`)
+  tracked as repeatable evaluations.
 - **ReAct protocol variant**: for models that handle free-text formats better
   than JSON (the protocol seam already exists).
 - **Sync facade**: thin `run_sync()` wrapper over the async API.

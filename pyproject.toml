@@ -1,6 +1,6 @@
 [project]
 name = "toolloop"
-version = "0.1.0"
+version = "0.2.0"
 description = "Agent loop framework for LLM providers without native tool use"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -17,6 +17,9 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = ["pydantic>=2.7"]
+
+[project.scripts]
+toolloop = "toolloop.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.4"]

@@ -12,6 +12,7 @@ from ._types import (
     ToolCallRecord,
 )
 from .agent import Agent, OnMax, RunResult
+from .approval import console_approver
 from .context import ContextManager, estimate_tokens
 from .hooks import ControlMode, Decision, StepContext, ToolCallContext, ToolResultContext
 from .protocol import (
@@ -23,9 +24,10 @@ from .protocol import (
 )
 from .provider import Provider
 from .subagent import subagent_tool
+from .testing import ScriptedProvider, final_answer, tool_call
 from .tools import STD_TOOLS, ToolDefinition, tool
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Agent",
@@ -54,7 +56,11 @@ __all__ = [
     "ToolProtocol",
     "ToolResultContext",
     "JsonToolProtocol",
+    "ScriptedProvider",
+    "console_approver",
     "estimate_tokens",
+    "final_answer",
     "subagent_tool",
     "tool",
+    "tool_call",
 ]

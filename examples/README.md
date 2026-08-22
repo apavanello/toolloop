@@ -18,6 +18,10 @@ Run any of them from the repository root:
 uv run python examples/01_first_agent.py
 ```
 
+To test **your own** agents the same deterministic way, use `toolloop.testing`
+(`ScriptedProvider` + `tool_call()`/`final_answer()` builders) — see the
+"Testing your agents" section of the main README.
+
 ## Real providers
 
 [`providers/`](providers/) holds copy-paste adapters implementing the one-method

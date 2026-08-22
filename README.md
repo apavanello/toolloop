@@ -79,8 +79,8 @@ class DemoProvider:
 
 agent = Agent(DemoProvider(), tools=[add])
 result = asyncio.run(agent.run("how much is 2 + 3?"))
-print(result.output)                    # 2 + 3 = 5
-print(result.status)                    # Status.COMPLETED
+print(result.output)  # 2 + 3 = 5
+print(result.status)  # Status.COMPLETED
 print(result.history[0].calls[0].result)  # 5
 ```
 
@@ -107,12 +107,13 @@ and applications, including a repository summarizer on
 ### Defining tools
 
 ```python
-@tool                                    # name = function, schema = type hints
+@tool  # name = function, schema = type hints
 async def search_docs(query: str, limit: int = 5) -> str:
     """Search the internal documentation."""
     ...
 
-@tool(dangerous=True)                    # flagged for approval hooks
+
+@tool(dangerous=True)  # flagged for approval hooks
 async def run_migration(env: str) -> str:
     """Run the database migration."""
     ...
@@ -127,12 +128,12 @@ become error observations the model repairs from — they never crash the loop.
 result = await agent.run(
     "summarize open PRs",
     max_iterations=25,
-    on_max=OnMax.WRAP_UP,       # or RAISE (default) or PARTIAL
-    output_model=Summary,       # pydantic model: validated structured output
+    on_max=OnMax.WRAP_UP,  # or RAISE (default) or PARTIAL
+    output_model=Summary,  # pydantic model: validated structured output
 )
-result.status                   # Status.COMPLETED | Status.MAX_ITERATIONS
-result.output                   # str, or a validated Summary instance
-result.history                  # full audit trail of every step and call
+result.status  # Status.COMPLETED | Status.MAX_ITERATIONS
+result.output  # str, or a validated Summary instance
+result.history  # full audit trail of every step and call
 ```
 
 ### Control modes and hooks
@@ -151,11 +152,50 @@ async def gatekeeper(ctx) -> Decision:
         return Decision.allow() if answer == "y" else Decision.deny("no")
     return Decision.allow()
 
+
 agent = Agent(provider, tools=STD_TOOLS, control=ControlMode.APPROVE, on_tool_call=gatekeeper)
+```
+
+A ready-made gate is included — `console_approver` allows safe tools silently
+and prompts a human only for `dangerous=True` ones:
+
+```python
+from toolloop import console_approver
+
+agent = Agent(provider, tools=STD_TOOLS, control=ControlMode.APPROVE,
+              on_tool_call=console_approver())
 ```
 
 `on_step` and `on_tool_result` hooks give you full observability (audit,
 logging, tracing) in both modes.
+
+### Parallel tool calls
+
+Default is sequential (deterministic). Set `max_parallel_calls` to run the
+calls of a single turn concurrently — approvals are still asked one by one,
+results are reassembled in the original order:
+
+```python
+agent = Agent(provider, tools=[fetch, grep], max_parallel_calls=4)
+```
+
+### Streaming (optional, UX-only)
+
+If your provider implements an optional `stream()` method (async iterator of
+deltas) and you pass `on_delta`, the agent streams while behaving exactly the
+same — the accumulated text is parsed like any other response:
+
+```python
+class MyProvider:
+    async def complete(self, messages) -> str: ...
+
+    async def stream(self, messages):  # optional
+        async for delta in upstream:
+            yield delta
+
+
+agent = Agent(MyProvider(), tools=[...], on_delta=print_delta)
+```
 
 ### Context management
 
@@ -193,24 +233,53 @@ nothing about it.
 
 ## Testing your agents
 
-The provider contract is one method, so deterministic tests are trivial:
-script a fake provider with canned responses (see `tests/conftest.py` in this
-repo) and assert on `result.history` — no LLM, no flakes.
+`toolloop.testing` ships deterministic scenario helpers — no LLM, no network,
+no flakes:
+
+```python
+from toolloop import Agent
+from toolloop.testing import ScriptedProvider, final_answer, tool_call
+
+
+async def test_agent_completes():
+    provider = ScriptedProvider(
+        [tool_call("search_docs", call_id="c1", query="pypi"), final_answer("done")]
+    )
+    result = await Agent(provider, tools=[search_docs]).run("search pypi")
+    assert result.output == "done"
+    assert result.history[0].calls[0].status == "ok"
+```
+
+Running out of script fails loudly (`AssertionError`), so scenarios can't
+silently drift from what the agent actually does.
+
+## CLI
+
+Scaffold and validate projects (no `run` — it's a library):
+
+```bash
+toolloop init my-agent   # full scaffold on an empty folder; on an existing
+                         # project, only missing toolloop metadata is added
+toolloop check           # validates tools/agent declared in [tool.toolloop]
+```
+
+`toolloop init` never overwrites existing files, and the scaffold comes with
+an offline scenario test. `python -m toolloop` works too.
 
 ## Project
 
 - License: MIT
 - Python: 3.11+
 - Dependencies: pydantic (only)
-- Roadmap: [roadmap.md](roadmap.md) — streaming, parallel tool calls, a small CLI (`init`, `test`), ...
+- Roadmap: [roadmap.md](roadmap.md) — provider adapters as extras, OpenTelemetry, session persistence, ...
 
 ## How it works
 
 1. Tool schemas and the JSON envelope format are rendered into the system
    prompt by a pluggable `ToolProtocol` (default: `JsonToolProtocol`).
 2. The agent calls the provider and parses the response envelope:
-   `tool_call` (a list of calls, executed sequentially in v1) or
-   `final_answer`.
+   `tool_call` (a list of calls, sequential by default or concurrent with
+   `max_parallel_calls`) or `final_answer`.
 3. Tool results are appended as observations; parse/validation errors are fed
    back so the model can repair its own output.
 4. The loop ends on `final_answer`, on `max_iterations` (per the configured

@@ -47,8 +47,7 @@ async def add(a: int, b: int) -> int:
 # What the (fake) model says on each turn. A real model produces this JSON
 # envelope because the agent taught it the format in the system prompt.
 SCRIPT = [
-    '{"type": "tool_call", "calls": '
-    '[{"id": "c1", "name": "add", "args": {"a": 2, "b": 3}}]}',
+    '{"type": "tool_call", "calls": [{"id": "c1", "name": "add", "args": {"a": 2, "b": 3}}]}',
     '{"type": "final_answer", "output": "2 + 3 = 5"}',
 ]
 
