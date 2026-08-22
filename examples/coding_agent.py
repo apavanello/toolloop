@@ -5,7 +5,7 @@ Usage:
 
 Every tool call goes through the approval hook: safe tools run free, the
 dangerous one (bash) asks a human first. Point it at any provider you like —
-see openai_compat_provider.py and anthropic_provider.py.
+see providers/ for ready-made adapters.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import asyncio
 import os
 import sys
 
-from openai_compat_provider import OpenAICompatProvider
+from providers.openai_compat_provider import OpenAICompatProvider
 
 from toolloop import STD_TOOLS, Agent, ControlMode, Decision, OnMax, Status
 
@@ -52,4 +52,5 @@ async def main() -> None:
     sys.exit(0 if result.status is Status.COMPLETED else 1)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

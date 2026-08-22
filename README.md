@@ -97,10 +97,10 @@ class MyCorporateProxyProvider:
         return response.text
 ```
 
-Reference adapters (OpenAI-compatible endpoints and Anthropic) live in
-[`examples/`](examples/) as copy-paste code, not dependencies — along with a
-ready-to-run application: a repository summarizer on
-[OpenRouter](examples/openrouter_app.py).
+Start with [`examples/`](examples/) — a hands-on tour, from a first offline
+agent through hooks, subagents and context management, up to real providers
+and applications, including a repository summarizer on
+[OpenRouter](examples/repo_summarizer.py).
 
 ## Tour
 

@@ -2,7 +2,7 @@
 
 Usage:
     OPENROUTER_API_KEY=sk-or-... uv run --with openai python \
-        examples/openrouter_app.py [path]
+        examples/repo_summarizer.py [path]
 
 The agent explores a codebase with tools (one custom + three from the
 standard toolset), logs its progress through an on_step hook, and returns a
@@ -17,7 +17,7 @@ import os
 import sys
 from pathlib import Path
 
-from openrouter_provider import OpenRouterProvider
+from providers.openrouter_provider import OpenRouterProvider
 from pydantic import BaseModel
 
 from toolloop import Agent, ControlMode, OnMax, Status, tool
