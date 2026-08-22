@@ -27,7 +27,7 @@ FULL_PYPROJECT_TEMPLATE = (
 name = "my-agent"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["toolloop>=0.2"]
+dependencies = ["toolloop>=0.3"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.23"]
@@ -45,7 +45,7 @@ MINIMAL_PYPROJECT_TEMPLATE = (
 name = "my-agent"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["toolloop>=0.2"]
+dependencies = ["toolloop>=0.3"]
 
 """
     + TOOLLOOP_SECTION
@@ -55,7 +55,7 @@ AGENT_TEMPLATE = '''\
 """Your toolloop agent.
 
 The scripted provider below runs offline; swap it for your real one
-(see toolloop's examples/providers for ready-made adapters).
+(see toolloop's toolloop.providers for ready-made adapters).
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """Provider adapter for any OpenAI-compatible Chat Completions endpoint.
 
 Works with OpenAI itself or any compatible gateway (Ollama, vLLM, corporate
-proxies...). Install the SDK with: pip install openai
+proxies...). Requires the openai SDK: ``pip install "toolloop[openai]"``.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from typing import Any
 
 from openai import AsyncOpenAI
 
-from toolloop import Message
+from .. import Message
 
 
 class OpenAICompatProvider:

@@ -64,3 +64,28 @@ async def test_compaction_via_summarization():
     final_messages = provider.calls[2]
     assert any("[conversation summary]" in m.content for m in final_messages)
     assert final_messages[0].role is Role.SYSTEM
+
+
+async def test_custom_token_counter_drives_compaction():
+    def always_over(messages):
+        return 10**9  # permanently over budget
+
+    provider = FakeProvider(["compact summary"])
+    manager = ContextManager(provider, max_tokens=100, token_counter=always_over)
+    messages = [
+        Message(Role.SYSTEM, "s"),
+        Message(Role.USER, "task"),
+        Message(Role.ASSISTANT, "a"),
+        Message(Role.USER, "obs", kind="observation"),
+    ]
+    managed = await manager.manage(messages)
+    assert any("[conversation summary]" in m.content for m in managed)
+    assert provider.calls  # the summarization request really happened
+
+
+async def test_zero_counter_never_manages():
+    provider = FakeProvider([])
+    manager = ContextManager(provider, max_tokens=1, token_counter=lambda messages: 0)
+    messages = [Message(Role.SYSTEM, "s" * 9999)]
+    assert await manager.manage(messages) is messages
+    assert provider.calls == []

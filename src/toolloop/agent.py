@@ -32,8 +32,10 @@ from .hooks import (
     ToolCallContext,
     ToolResultContext,
 )
+from .observability import otel_span, resolve_tracer
 from .protocol.base import FinalAnswer, ToolCallRequest, ToolProtocol
 from .protocol.json_protocol import JsonToolProtocol
+from .state import AgentState
 from .tools.definition import ToolDefinition
 
 
@@ -79,6 +81,8 @@ class Agent:
         max_context_tokens: int | None = None,
         max_parse_failures: int = 3,
         max_tool_result_chars: int = 10_000,
+        token_counter: Callable[[Sequence[Message]], int] | None = None,
+        tracer: Any = None,
     ) -> None:
         self.provider = provider
         self.protocol = protocol or JsonToolProtocol()
@@ -96,7 +100,16 @@ class Agent:
         self.registry: dict[str, ToolDefinition] = {t.name: t for t in tools}
         if len(self.registry) != len(tools):
             raise ValueError("duplicate tool names in Agent(tools=...)")
-        self.context = ContextManager(provider, max_context_tokens) if max_context_tokens else None
+        self.token_counter = token_counter
+        self.context = (
+            ContextManager(provider, max_context_tokens, token_counter=token_counter)
+            if max_context_tokens
+            else None
+        )
+        self._tracer = resolve_tracer(tracer)
+        # live conversation of the current session (empty until the first run)
+        self.conversation: list[Message] = []
+        self._session_history: list[StepRecord] = []
 
     async def run(
         self,
@@ -107,83 +120,152 @@ class Agent:
         control: ControlMode | None = None,
         output_model: type[BaseModel] | None = None,
     ) -> RunResult:
-        """Run the loop until ``final_answer``, ``max_iterations`` or a hook stops it."""
-        mode = control or self.control
-        if mode is ControlMode.APPROVE and self.on_tool_call is None:
-            raise ControlError(
-                "control=APPROVE requires an on_tool_call hook to approve tool "
-                "calls; pass on_tool_call=... or use ControlMode.BYPASS"
+        """Run the loop until ``final_answer``, ``max_iterations`` or a hook stops it.
+
+        If this agent was built with ``from_state`` (or has run before), the
+        new input continues the existing conversation instead of starting one.
+        """
+        with otel_span(self._tracer, "toolloop.run"):
+            return await self._run(
+                input,
+                max_iterations=max_iterations,
+                on_max=on_max,
+                control=control,
+                output_model=output_model,
             )
 
-        instructions = self.protocol.render_instructions(list(self.registry.values()))
-        system_content = (
-            f"{self.system_prompt}\n\n{instructions}" if self.system_prompt else instructions
-        )
-        messages: list[Message] = [
-            Message(Role.SYSTEM, system_content),
-            Message(Role.USER, input),
-        ]
-        history: list[StepRecord] = []
+    async def _run(
+        self,
+        input: str,
+        *,
+        max_iterations: int,
+        on_max: OnMax,
+        control: ControlMode | None,
+        output_model: type[BaseModel] | None,
+    ) -> RunResult:
+        mode = control or self.control
+        messages: list[Message] = list(self.conversation)
+        history: list[StepRecord] = list(self._session_history)
         parse_failures = 0
-
-        for step in range(1, max_iterations + 1):
-            raw = await self._generate(messages)
-            messages.append(Message(Role.ASSISTANT, raw))
-
-            try:
-                parsed = self.protocol.parse(raw)
-            except ParseError as exc:
-                parse_failures += 1
-                history.append(StepRecord(step=step, raw=raw, kind="parse_error"))
-                if parse_failures >= self.max_parse_failures:
-                    await self._fire_step(step, messages, raw, "parse_error", [])
-                    raise ParseLoopError(
-                        f"{parse_failures} consecutive unparseable responses; "
-                        f"last error: {exc.reason}"
-                    ) from exc
-                messages.append(
-                    Message(
-                        Role.USER,
-                        f"Your last response could not be parsed: {exc.reason}\n"
-                        "Respond again with a single JSON envelope "
-                        "(tool_call or final_answer) and no other text.",
-                        kind="observation",
-                    )
+        try:
+            if mode is ControlMode.APPROVE and self.on_tool_call is None:
+                raise ControlError(
+                    "control=APPROVE requires an on_tool_call hook to approve tool "
+                    "calls; pass on_tool_call=... or use ControlMode.BYPASS"
                 )
-                await self._fire_step(step, messages, raw, "parse_error", [])
-                continue
-            parse_failures = 0
 
-            if isinstance(parsed, FinalAnswer):
-                if output_model is not None:
-                    value, error = _validate_output(parsed.output, output_model)
-                    if error is not None:
+            if messages:
+                # resumed session: keep the conversation going
+                messages.append(Message(Role.USER, input))
+            else:
+                instructions = self.protocol.render_instructions(list(self.registry.values()))
+                system_content = (
+                    f"{self.system_prompt}\n\n{instructions}"
+                    if self.system_prompt
+                    else instructions
+                )
+                messages = [
+                    Message(Role.SYSTEM, system_content),
+                    Message(Role.USER, input),
+                ]
+
+            for step in range(1, max_iterations + 1):
+                with otel_span(
+                    self._tracer, "toolloop.step", {"toolloop.step.number": step}
+                ) as step_span:
+                    raw = await self._generate(messages)
+                    messages.append(Message(Role.ASSISTANT, raw))
+
+                    try:
+                        parsed = self.protocol.parse(raw)
+                    except ParseError as exc:
+                        parse_failures += 1
                         history.append(StepRecord(step=step, raw=raw, kind="parse_error"))
+                        if step_span is not None:
+                            step_span.set_attribute("toolloop.step.kind", "parse_error")
+                            step_span.add_event(
+                                "toolloop.parse_error", {"toolloop.reason": exc.reason}
+                            )
+                        if parse_failures >= self.max_parse_failures:
+                            await self._fire_step(step, messages, raw, "parse_error", [])
+                            raise ParseLoopError(
+                                f"{parse_failures} consecutive unparseable responses; "
+                                f"last error: {exc.reason}"
+                            ) from exc
                         messages.append(
                             Message(
                                 Role.USER,
-                                f"Your final_answer output is invalid: {error}\n"
-                                "Respond again with a corrected final_answer envelope.",
+                                f"Your last response could not be parsed: {exc.reason}\n"
+                                "Respond again with a single JSON envelope "
+                                "(tool_call or final_answer) and no other text.",
                                 kind="observation",
                             )
                         )
                         await self._fire_step(step, messages, raw, "parse_error", [])
                         continue
-                    history.append(StepRecord(step=step, raw=raw, kind="final_answer"))
-                    await self._fire_step(step, messages, raw, "final_answer", [])
-                    return RunResult(Status.COMPLETED, value, history)
-                history.append(StepRecord(step=step, raw=raw, kind="final_answer"))
-                await self._fire_step(step, messages, raw, "final_answer", [])
-                return RunResult(Status.COMPLETED, parsed.output, history)
+                    parse_failures = 0
 
-            call_records, observations = await self._process_calls(step, parsed.calls, mode)
-            messages.append(Message(Role.USER, "\n".join(observations), kind="observation"))
-            history.append(StepRecord(step=step, raw=raw, kind="tool_calls", calls=call_records))
-            if self.context is not None:
-                messages = await self.context.manage(messages)
-            await self._fire_step(step, messages, raw, "tool_calls", call_records)
+                    if isinstance(parsed, FinalAnswer):
+                        if step_span is not None:
+                            step_span.set_attribute("toolloop.step.kind", "final_answer")
+                        if output_model is not None:
+                            value, error = _validate_output(parsed.output, output_model)
+                            if error is not None:
+                                history.append(StepRecord(step=step, raw=raw, kind="parse_error"))
+                                messages.append(
+                                    Message(
+                                        Role.USER,
+                                        f"Your final_answer output is invalid: {error}\n"
+                                        "Respond again with a corrected final_answer envelope.",
+                                        kind="observation",
+                                    )
+                                )
+                                await self._fire_step(step, messages, raw, "parse_error", [])
+                                continue
+                            history.append(StepRecord(step=step, raw=raw, kind="final_answer"))
+                            await self._fire_step(step, messages, raw, "final_answer", [])
+                            return RunResult(Status.COMPLETED, value, history)
+                        history.append(StepRecord(step=step, raw=raw, kind="final_answer"))
+                        await self._fire_step(step, messages, raw, "final_answer", [])
+                        return RunResult(Status.COMPLETED, parsed.output, history)
 
-        return await self._handle_max(on_max, max_iterations, messages, history, output_model)
+                    if step_span is not None:
+                        step_span.set_attribute("toolloop.step.kind", "tool_calls")
+                    call_records, observations = await self._process_calls(step, parsed.calls, mode)
+                    messages.append(Message(Role.USER, "\n".join(observations), kind="observation"))
+                    history.append(
+                        StepRecord(step=step, raw=raw, kind="tool_calls", calls=call_records)
+                    )
+                    if self.context is not None:
+                        messages = await self.context.manage(messages)
+                    await self._fire_step(step, messages, raw, "tool_calls", call_records)
+
+            return await self._handle_max(on_max, max_iterations, messages, history, output_model)
+        finally:
+            self.conversation = messages
+            self._session_history = history
+
+    def to_state(self) -> AgentState:
+        """Snapshot the current session (conversation + audit history)."""
+        return AgentState(messages=list(self.conversation), history=list(self._session_history))
+
+    @classmethod
+    def from_state(
+        cls,
+        state: AgentState,
+        provider: Any,
+        tools: Sequence[ToolDefinition] = (),
+        **kwargs: Any,
+    ) -> Agent:
+        """Build an agent that continues the conversation stored in ``state``.
+
+        Provider, tools and hooks are code — pass them here, not in the state.
+        The next ``run()`` appends its input to the loaded conversation.
+        """
+        agent = cls(provider, tools, **kwargs)
+        agent.conversation = list(state.messages)
+        agent._session_history = list(state.history)
+        return agent
 
     async def _generate(self, messages: list[Message]) -> str:
         """Call the provider; prefer streaming when both sides support it.
@@ -296,8 +378,19 @@ class Agent:
                 call_id=call.id, name=call.name, args=args, status="error", result=message
             )
         started = perf_counter()
-        ok, result = await tooldef.execute(args)
-        duration = perf_counter() - started
+        with otel_span(
+            self._tracer,
+            "toolloop.tool",
+            {
+                "toolloop.tool.name": call.name,
+                "toolloop.tool.dangerous": tooldef.dangerous if tooldef else False,
+            },
+        ) as tool_span:
+            ok, result = await tooldef.execute(args)
+            duration = perf_counter() - started
+            if tool_span is not None:
+                tool_span.set_attribute("toolloop.tool.status", "ok" if ok else "error")
+                tool_span.set_attribute("toolloop.tool.duration_s", round(duration, 6))
         if len(result) > self.max_tool_result_chars:
             result = result[: self.max_tool_result_chars] + "\n...[result truncated]"
         return ToolCallRecord(

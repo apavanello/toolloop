@@ -45,7 +45,10 @@ capable of agentic work — the SDK just won't carry function calls.
 Requires Python 3.11+.
 
 ```bash
-pip install toolloop        # once published
+pip install toolloop                    # once published
+pip install "toolloop[openai]"          # + OpenAICompat/OpenRouter adapters
+pip install "toolloop[anthropic]"       # + Anthropic adapter
+pip install "toolloop[otel]"            # + OpenTelemetry auto-instrumentation
 # or, from source:
 uv sync --extra dev
 ```
@@ -95,6 +98,16 @@ class MyCorporateProxyProvider:
             [{"role": m.role.value, "content": m.content} for m in messages]
         )
         return response.text
+```
+
+Or use a ready-made adapter from `toolloop.providers` (tested, with the
+provider-specific quirks handled — e.g. OpenRouter's `reasoning_details`
+round-trip for reasoning models):
+
+```python
+from toolloop.providers import OpenRouterProvider
+
+provider = OpenRouterProvider("openai/gpt-4o-mini", reasoning=True)
 ```
 
 Start with [`examples/`](examples/) — a hands-on tour, from a first offline
@@ -162,8 +175,9 @@ and prompts a human only for `dangerous=True` ones:
 ```python
 from toolloop import console_approver
 
-agent = Agent(provider, tools=STD_TOOLS, control=ControlMode.APPROVE,
-              on_tool_call=console_approver())
+agent = Agent(
+    provider, tools=STD_TOOLS, control=ControlMode.APPROVE, on_tool_call=console_approver()
+)
 ```
 
 `on_step` and `on_tool_result` hooks give you full observability (audit,
@@ -208,6 +222,33 @@ wrote, it does not echo the content).
 ```python
 agent = Agent(provider, tools=STD_TOOLS, max_context_tokens=16_000)
 ```
+
+Budgeting uses a ~4-chars-per-token heuristic by default; plug your own
+counter (e.g. tiktoken with your model's encoding) with `token_counter=`.
+
+### Session persistence
+
+Snapshot a conversation and resume it later — even in another process. The
+state is data (messages + audit trail); provider, tools and hooks are code
+and are rebuilt on resume:
+
+```python
+state = agent.to_state()
+open("session.json", "w").write(state.to_json())   # persist wherever you like
+
+# later:
+from toolloop import AgentState
+state = AgentState.from_json(open("session.json").read())
+agent = Agent.from_state(state, provider, tools=[...])
+await agent.run("now, the next step")   # continues the same conversation
+```
+
+### Observability
+
+With `opentelemetry` installed (`pip install "toolloop[otel]"`), the loop is
+auto-instrumented — spans for `run` → `step` → `tool`, with parse errors as
+events. Without the SDK, instrumentation is a no-op and the core carries no
+extra dependency. Inject a custom tracer with `Agent(..., tracer=tracer)`.
 
 ### Subagents
 

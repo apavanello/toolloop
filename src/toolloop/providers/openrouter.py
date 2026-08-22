@@ -1,8 +1,7 @@
 """Provider adapter for OpenRouter, built on the official OpenAI SDK.
 
-Keys: https://openrouter.ai/keys — export OPENROUTER_API_KEY.
-Model names use OpenRouter's ``provider/model`` format, e.g.
-``openai/gpt-4o-mini`` or ``anthropic/claude-sonnet-4.5``.
+Keys: https://openrouter.ai/keys — export ``OPENROUTER_API_KEY``. Model names
+use OpenRouter's ``provider/model`` format, e.g. ``openai/gpt-4o-mini``.
 
 Reasoning models (e.g. ``stealth/ox-alpha``): pass ``reasoning=True`` to send
 ``extra_body={"reasoning": {"enabled": True}}``, exactly like OpenRouter's
@@ -10,7 +9,7 @@ docs. The adapter also preserves ``reasoning_details`` on assistant messages
 across turns ("pass back unmodified"), so the model keeps its chain of
 thought between tool-call rounds.
 
-Install the SDK with: pip install openai
+Requires the openai SDK: ``pip install "toolloop[openai]"``.
 """
 
 from __future__ import annotations
@@ -21,7 +20,7 @@ from typing import Any
 
 from openai import AsyncOpenAI
 
-from toolloop import Message
+from .. import Message
 
 
 class OpenRouterProvider:
@@ -40,7 +39,7 @@ class OpenRouterProvider:
         self.client = AsyncOpenAI(
             base_url=self.BASE_URL,
             api_key=api_key or os.environ["OPENROUTER_API_KEY"],
-            default_headers={"X-Title": "toolloop example"},
+            default_headers={"X-Title": "toolloop"},
         )
         self.model = model
         merged = dict(extra_body or {})

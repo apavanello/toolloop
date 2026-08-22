@@ -24,27 +24,32 @@ To test **your own** agents the same deterministic way, use `toolloop.testing`
 
 ## Real providers
 
-[`providers/`](providers/) holds copy-paste adapters implementing the one-method
-provider contract against real SDKs (`pip install openai` / `pip install anthropic`):
+Ready-made, tested adapters live in the library itself —
+`toolloop.providers` — installed via extras:
 
-- `openai_compat_provider.py` — any OpenAI-compatible endpoint (OpenAI, Ollama,
+```bash
+pip install "toolloop[openai]"      # OpenAICompatProvider + OpenRouterProvider
+pip install "toolloop[anthropic]"   # AnthropicProvider
+```
+
+- `OpenAICompatProvider` — any OpenAI-compatible endpoint (OpenAI, Ollama,
   vLLM, corporate proxies...)
-- `anthropic_provider.py` — the Anthropic Messages API
-- `openrouter_provider.py` — OpenRouter
+- `OpenRouterProvider` — OpenRouter, including reasoning models
+  (`reasoning=True` preserves `reasoning_details` across turns)
+- `AnthropicProvider` — the Anthropic Messages API
 
 ## Applications
 
 - [`coding_agent.py`](coding_agent.py) — a minimal coding harness: standard
   toolset, `ControlMode.APPROVE`, human gate on dangerous tools.
   ```bash
-  OPENAI_API_KEY=... uv run --with openai python examples/coding_agent.py "task"
+  OPENAI_API_KEY=... uv run --extra openai python examples/coding_agent.py "task"
   ```
 - [`repo_summarizer.py`](repo_summarizer.py) — the mini application: a
   repository summarizer on OpenRouter with a custom tool, an `on_step` progress
   hook and structured output validated by pydantic.
   ```bash
-  OPENROUTER_API_KEY=sk-or-... uv run --with openai python examples/repo_summarizer.py .
+  OPENROUTER_API_KEY=sk-or-... uv run --extra openai python examples/repo_summarizer.py .
   ```
 
-Run the applications from the repository root so the `providers/` imports
-resolve.
+Run the applications from the repository root.

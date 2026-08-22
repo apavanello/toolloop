@@ -1,5 +1,6 @@
 """toolloop: agent loops for LLM providers without native tool use."""
 
+from . import providers  # noqa: F401  (lazy adapters; safe without SDKs)
 from ._types import (
     ControlError,
     MaxIterationsExceeded,
@@ -23,14 +24,16 @@ from .protocol import (
     ToolProtocol,
 )
 from .provider import Provider
+from .state import AgentState
 from .subagent import subagent_tool
 from .testing import ScriptedProvider, final_answer, tool_call
 from .tools import STD_TOOLS, ToolDefinition, tool
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Agent",
+    "AgentState",
     "ContextManager",
     "ControlError",
     "ControlMode",

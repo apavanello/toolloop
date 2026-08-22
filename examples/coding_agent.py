@@ -1,11 +1,11 @@
 """A minimal coding-agent harness built with toolloop.
 
 Usage:
-    OPENAI_API_KEY=... uv run python examples/coding_agent.py "task here"
+    OPENAI_API_KEY=... uv run --extra openai python examples/coding_agent.py "task here"
 
 Every tool call goes through the approval hook: safe tools run free, the
 dangerous one (bash) asks a human first. Point it at any provider you like —
-see providers/ for ready-made adapters.
+ready-made adapters live in ``toolloop.providers``.
 """
 
 from __future__ import annotations
@@ -14,9 +14,8 @@ import asyncio
 import os
 import sys
 
-from providers.openai_compat_provider import OpenAICompatProvider
-
 from toolloop import STD_TOOLS, Agent, ControlMode, Decision, OnMax, Status
+from toolloop.providers import OpenAICompatProvider
 
 
 async def approve(ctx) -> Decision:

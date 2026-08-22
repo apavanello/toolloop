@@ -1,7 +1,7 @@
 """A simple application: a repository summarizer agent on OpenRouter.
 
 Usage:
-    OPENROUTER_API_KEY=sk-or-... uv run --with openai python \
+    OPENROUTER_API_KEY=sk-or-... uv run --extra openai python \
         examples/repo_summarizer.py [path]
 
 The agent explores a codebase with tools (one custom + three from the
@@ -17,10 +17,10 @@ import os
 import sys
 from pathlib import Path
 
-from providers.openrouter_provider import OpenRouterProvider
 from pydantic import BaseModel
 
 from toolloop import Agent, ControlMode, OnMax, Status, tool
+from toolloop.providers import OpenRouterProvider
 from toolloop.tools import grep, list_files, read_file
 
 

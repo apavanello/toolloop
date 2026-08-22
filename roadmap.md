@@ -45,19 +45,25 @@ work with any `complete(messages) -> str` implementation.
   modules declared in `[tool.toolloop]`: imports, duplicate tool names, schema
   rendering). Deliberately **no `run`** — it's a library.
 
+### v0.3.0 — ecosystem & production (2026-08)
+
+- **Providers as tested extras**: `toolloop[openai]` (OpenAICompatProvider +
+  OpenRouterProvider, including reasoning models' `extra_body` and the
+  `reasoning_details` round-trip) and `toolloop[anthropic]`. Lazy imports with
+  helpful errors; SDKs stubbed in the test suite.
+- **Session persistence**: `Agent.to_state()` / `Agent.from_state()` /
+  `AgentState.to_json()/from_json()` — snapshot and resume conversations
+  (provider/tools are code and are rebuilt on resume).
+- **OpenTelemetry auto-instrumentation**: span tree `run → step → tool` with
+  parse-error events, via lazy import (no-op without the SDK). Extra
+  `toolloop[otel]`; custom tracers via `Agent(tracer=...)`.
+- **Pluggable token accounting**: `Agent(token_counter=...)` feeds
+  `ContextManager`; heuristic default stays; tiktoken left to the user
+  (model-dependent).
+
 ## Next up
 
-### v0.3 — ecosystem & production
-
-- **Provider adapters as extras**: graduate the example adapters into tested
-  optional dependencies (`toolloop[openai]`, `toolloop[anthropic]`).
-- **Observability**: OpenTelemetry spans for steps and tool calls (natural fit
-  for corporate environments).
-- **Session persistence**: save/resume agent state (messages + tool registry).
-- **Token accounting**: pluggable counter (optional `tiktoken`), heuristics
-  today.
-
-## Ideas / exploration
+### v0.4 — candidates
 
 - **MCP bridge**: expose Model Context Protocol servers as toolloop tools.
 - **Sub-agent orchestration**: typed handoffs, shared registries, teams.
@@ -65,6 +71,9 @@ work with any `complete(messages) -> str` implementation.
   tracked as repeatable evaluations.
 - **ReAct protocol variant**: for models that handle free-text formats better
   than JSON (the protocol seam already exists).
+
+## Ideas / exploration
+
 - **Sync facade**: thin `run_sync()` wrapper over the async API.
 
 ## Non-goals

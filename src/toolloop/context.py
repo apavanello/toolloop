@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from ._types import Message, Role
 
@@ -30,15 +30,21 @@ class ContextManager:
     keep_recent_observations = 2
     observation_head_chars = 200
 
-    def __init__(self, provider, max_tokens: int):
+    def __init__(
+        self,
+        provider,
+        max_tokens: int,
+        token_counter: Callable[[Sequence[Message]], int] | None = estimate_tokens,
+    ):
         self.provider = provider
         self.max_tokens = max_tokens
+        self.token_counter = token_counter or estimate_tokens
 
     async def manage(self, messages: list[Message]) -> list[Message]:
-        if estimate_tokens(messages) <= self.max_tokens:
+        if self.token_counter(messages) <= self.max_tokens:
             return messages
         messages = self._truncate_observations(messages)
-        if estimate_tokens(messages) <= self.max_tokens:
+        if self.token_counter(messages) <= self.max_tokens:
             return messages
         return await self._compact(messages)
 
@@ -47,7 +53,7 @@ class ContextManager:
         indexes = [i for i, message in enumerate(out) if message.kind == "observation"]
         preserved = set(indexes[-self.keep_recent_observations :])
         for index in indexes:  # oldest first, stop as soon as we fit
-            if index in preserved or estimate_tokens(out) <= self.max_tokens:
+            if index in preserved or self.token_counter(out) <= self.max_tokens:
                 continue
             head = out[index].content[: self.observation_head_chars]
             replacement = f"{head}\n...[older observation truncated]"
@@ -71,7 +77,7 @@ class ContextManager:
         )
         budget_chars = max(
             0,
-            (self.max_tokens - estimate_tokens([head, *tail])) * 4,
+            (self.max_tokens - self.token_counter([head, *tail])) * 4,
         )
         if len(summary) > budget_chars:
             summary = summary[:budget_chars] + "\n...[summary truncated]"

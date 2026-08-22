@@ -1,13 +1,15 @@
 """Provider adapter for the Anthropic Messages API.
 
-Install the SDK with: pip install anthropic
+Requires the anthropic SDK: ``pip install "toolloop[anthropic]"``.
 """
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from anthropic import AsyncAnthropic
 
-from toolloop import Message
+from .. import Message
 
 
 class AnthropicProvider:
@@ -18,7 +20,7 @@ class AnthropicProvider:
         self.model = model
         self.max_tokens = max_tokens
 
-    async def complete(self, messages: list[Message]) -> str:
+    async def complete(self, messages: Sequence[Message]) -> str:
         system = "\n\n".join(m.content for m in messages if m.role.value == "system")
         conversation = [
             {
