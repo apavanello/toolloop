@@ -98,7 +98,9 @@ class MyCorporateProxyProvider:
 ```
 
 Reference adapters (OpenAI-compatible endpoints and Anthropic) live in
-[`examples/`](examples/) as copy-paste code, not dependencies.
+[`examples/`](examples/) as copy-paste code, not dependencies — along with a
+ready-to-run application: a repository summarizer on
+[OpenRouter](examples/openrouter_app.py).
 
 ## Tour
 
