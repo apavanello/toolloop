@@ -68,6 +68,7 @@ class Summary(BaseModel):
     answer: str
     citations: list[str]
 
+
 result = await agent.run("summarize", output_model=Summary)
 result.output  # a validated Summary instance
 ```

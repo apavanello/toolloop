@@ -6,15 +6,15 @@ crashes. Both are state — data — while provider, tools and hooks remain code
 ## Save and resume a conversation
 
 ```python
-state = agent.to_state()                      # messages + audit history
-open("session.json", "w").write(state.to_json())   # persist anywhere
+state = agent.to_state()  # messages + audit history
+open("session.json", "w").write(state.to_json())  # persist anywhere
 
 # later — even in another process:
 from toolloop import Agent, AgentState
 
 state = AgentState.from_json(open("session.json").read())
 agent = Agent.from_state(state, provider, tools=[...])
-await agent.run("now, the next step")   # continues the SAME conversation
+await agent.run("now, the next step")  # continues the SAME conversation
 ```
 
 The next `run()` appends its input to the loaded conversation; the audit
@@ -34,7 +34,7 @@ each run** — so a crashed run loses at most N steps:
 agent = Agent(
     provider,
     tools=[...],
-    checkpoint="session.json",   # or any Callable[[AgentState], Any]
+    checkpoint="session.json",  # or any Callable[[AgentState], Any]
     checkpoint_every=10,
 )
 ```

@@ -36,14 +36,14 @@ async def add(a: int, b: int) -> int:
 provider = ScriptedProvider(
     [
         tool_call("add", call_id="c1", a=2, b=3),  # the "model" wants a tool
-        final_answer("2 + 3 = 5"),                 # then it is satisfied
+        final_answer("2 + 3 = 5"),  # then it is satisfied
     ]
 )
 agent = Agent(provider, tools=[add])
 result = asyncio.run(agent.run("how much is 2 + 3?"))
 
-print(result.status)   # Status.COMPLETED
-print(result.output)   # "2 + 3 = 5"
+print(result.status)  # Status.COMPLETED
+print(result.output)  # "2 + 3 = 5"
 print(result.history)  # full audit trail of every step and tool call
 ```
 

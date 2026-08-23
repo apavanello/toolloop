@@ -105,15 +105,29 @@ work with any `complete(messages) -> str` implementation.
   reference generated from docstrings (mkdocstrings); deployed to GitHub
   Pages on every push that touches `docs/`.
 
+### v1.1.0 — code intelligence toolset (2026-08)
+
+- **`toolloop.codetools`** (extra `[code]`, tree-sitter): `symbols`,
+  `find_symbol`, `references` (heuristic), `imports` — python/go/java/kotlin
+  with a generic surface (language detected by extension). Spring-aware JVM
+  tools: `spring_endpoints` (verb+path+handler) and `spring_beans`.
+  `CODE_TOOLS` = standard toolset + AST tools.
+- `tool_call()` builder parameter renamed to `tool` (positional use
+  unchanged) so tools with a `name` argument don't collide.
+- Language-server integration (hover, precise go-to-def) deliberately NOT
+  included — see candidates below.
+
 ## Next up
 
-### v1.1 — candidates
+### v1.2 — candidates
 
 - **Sub-agent orchestration**: typed handoffs, shared registries, teams.
 - **Evals as assets**: curated scenario suites (pytest + `toolloop.testing`)
   tracked as repeatable evaluations.
 - **ReAct protocol variant**: for models that handle free-text formats better
   than JSON (the protocol seam already exists).
+- **Language-server bridge** (LSP): hover/go-to-def/diagnostics — likely via
+  the same lifecycle pattern as the MCP bridge.
 
 ## Non-goals
 

@@ -289,6 +289,31 @@ from toolloop import STD_TOOLS
 Pure-Python coding-agent toolset; import it or ignore it — the core knows
 nothing about it.
 
+### Code intelligence toolset (python · go · java · kotlin)
+
+AST-powered tools on tree-sitter, with a **generic surface**: the language is
+detected from the file extension, so one small toolset serves all four.
+`spring_endpoints`/`spring_beans` map Spring REST surfaces and beans in
+java/kotlin trees.
+
+```python
+from toolloop.codetools import CODE_TOOLS  # = STD_TOOLS + AST tools
+
+agent = Agent(provider, tools=CODE_TOOLS)
+# symbols(path)          — outline with kinds and line ranges
+# find_symbol(name, root, kind=None) — definition sites across files
+# references(symbol, root) — identifier occurrences (heuristic)
+# imports(path)          — imports/package of a file
+# spring_endpoints(root) — GET/POST/... + path + handler
+# spring_beans(root)     — @Component/@Service/... + @Bean methods
+```
+
+Requires `pip install "toolloop[code]"` (tree-sitter + the four grammars).
+
+`references` is deliberately documented as heuristic — tree-sitter parses, it
+does not resolve imports or types. Language servers (hover, precise
+go-to-def) are a roadmap item, not a dependency.
+
 ### MCP tools (Model Context Protocol)
 
 Expose any MCP server's tools to your agent — the whole MCP ecosystem for

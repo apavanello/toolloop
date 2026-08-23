@@ -357,6 +357,29 @@ from toolloop import STD_TOOLS
 Toolset de coding agent em Python puro; importe ou ignore — o core não sabe
 nada dele.
 
+### Toolset de inteligência de código (python · go · java · kotlin)
+
+Tools sobre AST via tree-sitter, com **surface genérico**: a linguagem é
+detectada pela extensão do arquivo — um toolset pequeno serve as quatro.
+`spring_endpoints`/`spring_beans` mapeiam superfícies REST e beans Spring em
+árvores java/kotlin.
+
+```python
+from toolloop.codetools import CODE_TOOLS  # = toolset básico + tools de AST
+
+agent = Agent(provider, tools=CODE_TOOLS)
+# symbols(path)          — outline com kinds e linhas
+# find_symbol(name, root, kind=None) — sites de definição entre arquivos
+# references(symbol, root) — ocorrências do identificador (heurística)
+# imports(path)          — imports/pacote de um arquivo
+# spring_endpoints(root) — GET/POST/... + path + handler
+# spring_beans(root)     — @Component/@Service/... + métodos @Bean
+```
+
+Requer `pip install "toolloop[code]"` (tree-sitter + as quatro gramáticas).
+`references` é deliberadamente heurística — tree-sitter faz parsing, não
+resolve imports nem tipos. Language servers ficam no roadmap.
+
 ## Testando seus agentes
 
 `toolloop.testing` traz helpers determinísticos de cenário — sem LLM, sem

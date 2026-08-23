@@ -12,8 +12,8 @@ config = McpServerConfig(command="uvx", args=["mcp-server-fetch"])
 # or streamable HTTP:
 # config = McpServerConfig(url="https://example.com/mcp", headers={...})
 
-async with mcp_tools(config) as tools:      # also accepts a list of configs
-    agent = Agent(provider, tools=tools)    # tools are alive only inside the with
+async with mcp_tools(config) as tools:  # also accepts a list of configs
+    agent = Agent(provider, tools=tools)  # tools are alive only inside the with
     await agent.run("fetch the toolloop README")
 ```
 
@@ -25,10 +25,12 @@ close when the block exits — **run your agent inside the `async with`**.
 
 ```python
 tools = []
-async with mcp_tools([
-    McpServerConfig(command="uvx", args=["mcp-server-fetch"]),
-    McpServerConfig(url="https://example.com/mcp", prefix="corp_"),
-]) as tools:
+async with mcp_tools(
+    [
+        McpServerConfig(command="uvx", args=["mcp-server-fetch"]),
+        McpServerConfig(url="https://example.com/mcp", prefix="corp_"),
+    ]
+) as tools:
     ...
 ```
 
