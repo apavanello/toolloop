@@ -15,6 +15,7 @@ and applications come last.
 | 07 | [`07_parallel_and_streaming.py`](07_parallel_and_streaming.py) | `max_parallel_calls` wall-clock, `stream()` + `on_delta` |
 | 08 | [`08_sessions_and_checkpoints.py`](08_sessions_and_checkpoints.py) | save/resume a conversation, incremental checkpoints |
 | 09 | [`09_production_hardening.py`](09_production_hardening.py) | retries, timeout, rate limiting, usage, `run_sync` — all sync |
+| 10 | [`10_code_intelligence.py`](10_code_intelligence.py) | AST tools: symbols/find_symbol/spring_endpoints (py+java fixtures) |
 
 Run any of them from the repository root:
 

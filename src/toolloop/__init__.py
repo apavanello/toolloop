@@ -31,7 +31,7 @@ from .sync import run_sync
 from .testing import ScriptedProvider, final_answer, tool_call
 from .tools import STD_TOOLS, ToolDefinition, tool
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 __all__ = [
     "Agent",

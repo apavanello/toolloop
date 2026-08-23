@@ -34,9 +34,13 @@ class ScriptedProvider:
         return self.responses.pop(0)
 
 
-def tool_call(name: str, call_id: str | None = None, **args: Any) -> str:
-    """Envelope string requesting a single tool call."""
-    entry: dict[str, Any] = {"name": name, "args": args}
+def tool_call(tool: str, call_id: str | None = None, **args: Any) -> str:
+    """Envelope string requesting a single tool call.
+
+    ``tool`` is positional on purpose: the keyword arguments are the tool's
+    own arguments (which may legitimately be called ``name``).
+    """
+    entry: dict[str, Any] = {"name": tool, "args": args}
     if call_id is not None:
         entry["id"] = call_id
     return json.dumps({"type": "tool_call", "calls": [entry]})

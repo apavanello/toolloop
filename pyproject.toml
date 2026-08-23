@@ -1,6 +1,6 @@
 [project]
 name = "toolloop"
-version = "1.0.1"
+version = "1.1.0"
 description = "Agent loop framework for LLM providers without native tool use"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,11 +26,19 @@ openai = ["openai>=1.40"]
 anthropic = ["anthropic>=0.34"]
 otel = ["opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20"]
 mcp = ["mcp>=1.9,<2"]
+code = [
+    "tree-sitter>=0.23,<0.27",
+    "tree-sitter-python>=0.23",
+    "tree-sitter-go>=0.23",
+    "tree-sitter-java>=0.23",
+    "tree-sitter-kotlin>=1.0",
+]
 all = [
     "toolloop[openai]",
     "toolloop[anthropic]",
     "toolloop[otel]",
     "toolloop[mcp]",
+    "toolloop[code]",
 ]
 dev = [
     "pytest>=8",
@@ -45,6 +53,11 @@ dev = [
     "pydantic-settings>=2.0",
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.26",
+    "tree-sitter>=0.23,<0.27",
+    "tree-sitter-python>=0.23",
+    "tree-sitter-go>=0.23",
+    "tree-sitter-java>=0.23",
+    "tree-sitter-kotlin>=1.0",
 ]
 
 [build-system]

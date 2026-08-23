@@ -60,6 +60,7 @@ nav:
       - Parallel & streaming: concepts/parallel-streaming.md
   - Production: production.md
   - MCP: mcp.md
+  - Code tools: codetools.md
   - CLI: cli.md
   - Examples: examples.md
   - API reference:
@@ -67,4 +68,5 @@ nav:
       - Tools: api/tools.md
       - Providers: api/providers.md
       - MCP: api/mcp.md
+      - Code tools: api/codetools.md
       - Support modules: api/support.md

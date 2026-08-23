@@ -12,11 +12,11 @@ provider = rate_limited(MyProvider(), concurrency=5, min_interval=0.2)  # shared
 agent = Agent(
     provider,
     tools=[...],
-    max_retries=3,              # transient gateway errors: exponential backoff + jitter
+    max_retries=3,  # transient gateway errors: exponential backoff + jitter
     retry_backoff=0.5,
-    provider_timeout=60,        # a hanging provider fails fast instead of forever
+    provider_timeout=60,  # a hanging provider fails fast instead of forever
     checkpoint="session.json",  # incremental state snapshots (or a callable)
-    checkpoint_every=10,        # ...every N steps, plus one at the end of each run
+    checkpoint_every=10,  # ...every N steps, plus one at the end of each run
 )
 ```
 
@@ -74,8 +74,8 @@ One line sends the loop's stdlib logging to the terminal or a file:
 ```python
 from toolloop.devlog import dev_logger
 
-dev_logger()             # -> stderr, live
-dev_logger("run.log")    # -> file
+dev_logger()  # -> stderr, live
+dev_logger("run.log")  # -> file
 ```
 
 INFO covers steps, tool calls (name, args, status, duration, result preview)
